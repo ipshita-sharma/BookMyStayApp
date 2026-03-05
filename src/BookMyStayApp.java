@@ -1,121 +1,93 @@
-// File: UseCase4RoomSearch.java
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Scanner;
 
-import java.util.*;
+// Class representing a guest's reservation intent
+class Reservation {
+    private String guestName;
+    private int roomNumber; // Requested room number
 
-// Domain model for a Room
-class Room {
-    private String type;
-    private double pricePerNight;
-    private List<String> amenities;
-
-    public Room(String type, double pricePerNight, List<String> amenities) {
-        this.type = type;
-        this.pricePerNight = pricePerNight;
-        this.amenities = new ArrayList<>(amenities); // defensive copy
+    public Reservation(String guestName, int roomNumber) {
+        this.guestName = guestName;
+        this.roomNumber = roomNumber;
     }
 
-    public String getType() {
-        return type;
+    public String getGuestName() {
+        return guestName;
     }
 
-    public double getPricePerNight() {
-        return pricePerNight;
-    }
-
-    public List<String> getAmenities() {
-        return Collections.unmodifiableList(amenities);
+    public int getRoomNumber() {
+        return roomNumber;
     }
 
     @Override
     public String toString() {
-        return "Room Type: " + type + "\nPrice: $" + pricePerNight +
-                "\nAmenities: " + String.join(", ", amenities);
+        return "Reservation[Guest: " + guestName + ", Room: " + roomNumber + "]";
     }
 }
 
-// Inventory class to hold room availability
-class Inventory {
-    private Map<String, Integer> roomAvailability; // Room type -> count
-    private Map<String, Room> rooms; // Room type -> Room object
+// Main class for Use Case 5
+public class BookMyStayApp {
 
-    public Inventory() {
-        roomAvailability = new HashMap<>();
-        rooms = new HashMap<>();
+    // Queue to store incoming booking requests
+    private Queue<Reservation> bookingQueue;
+
+    public BookMyStayApp() {
+        bookingQueue = new LinkedList<>();
     }
 
-    public void addRoom(Room room, int count) {
-        rooms.put(room.getType(), room);
-        roomAvailability.put(room.getType(), count);
+    // Method to submit a booking request
+    public void submitBookingRequest(String guestName, int roomNumber) {
+        Reservation reservation = new Reservation(guestName, roomNumber);
+        bookingQueue.add(reservation);
+        System.out.println("Booking request added to queue: " + reservation);
     }
 
-    // Read-only access to availability
-    public int getAvailability(String roomType) {
-        return roomAvailability.getOrDefault(roomType, 0);
+    // Method to process booking requests (for demonstration)
+    public void processBookingRequests() {
+        System.out.println("\nProcessing booking requests in arrival order:");
+        while (!bookingQueue.isEmpty()) {
+            Reservation reservation = bookingQueue.poll();
+            // Allocation logic would go here; currently just display
+            System.out.println("Processing: " + reservation);
+        }
+        System.out.println("All booking requests have been processed.");
     }
 
-    public Room getRoom(String roomType) {
-        return rooms.get(roomType);
-    }
+    public static void main(String[] args) {
+        BookMyStayApp bookingSystem = new BookMyStayApp();
+        Scanner scanner = new Scanner(System.in);
+        boolean exit = false;
 
-    public Set<String> getAllRoomTypes() {
-        return rooms.keySet();
-    }
-}
+        System.out.println("=== Welcome to Book My Stay: Booking Request Queue ===");
 
-// Service class for searching rooms
-class SearchService {
-    private Inventory inventory;
+        while (!exit) {
+            System.out.println("\n1. Submit Booking Request");
+            System.out.println("2. Process Booking Requests");
+            System.out.println("3. Exit");
+            System.out.print("Choose an option: ");
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
 
-    public SearchService(Inventory inventory) {
-        this.inventory = inventory;
-    }
-
-    public void displayAvailableRooms() {
-        boolean found = false;
-        for (String roomType : inventory.getAllRoomTypes()) {
-            int available = inventory.getAvailability(roomType);
-            if (available > 0) { // Only show available rooms
-                found = true;
-                Room room = inventory.getRoom(roomType);
-                System.out.println("----------------------------");
-                System.out.println(room);
-                System.out.println("Available Rooms: " + available);
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter Guest Name: ");
+                    String name = scanner.nextLine();
+                    System.out.print("Enter Requested Room Number: ");
+                    int room = scanner.nextInt();
+                    bookingSystem.submitBookingRequest(name, room);
+                    break;
+                case 2:
+                    bookingSystem.processBookingRequests();
+                    break;
+                case 3:
+                    exit = true;
+                    System.out.println("Exiting the system. Goodbye!");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Try again.");
             }
         }
-        if (!found) {
-            System.out.println("No rooms available at the moment.");
-        }
-    }
-}
-
-// Actor class representing Guest
-class Guest {
-    private SearchService searchService;
-
-    public Guest(SearchService searchService) {
-        this.searchService = searchService;
-    }
-
-    public void searchRooms() {
-        System.out.println("Searching for available rooms...\n");
-        searchService.displayAvailableRooms();
-    }
-}
-
-// Main class to run Use Case 4
-public class BookMyStayApp {
-    public static void main(String[] args) {
-        // Setup inventory
-        Inventory inventory = new Inventory();
-        inventory.addRoom(new Room("Single", 100.0, Arrays.asList("WiFi", "TV")), 5);
-        inventory.addRoom(new Room("Double", 180.0, Arrays.asList("WiFi", "TV", "Mini Bar")), 2);
-        inventory.addRoom(new Room("Suite", 350.0, Arrays.asList("WiFi", "TV", "Mini Bar", "Jacuzzi")), 0); // unavailable
-
-        // Initialize search service
-        SearchService searchService = new SearchService(inventory);
-
-        // Guest initiates search
-        Guest guest = new Guest(searchService);
-        guest.searchRooms();
+        scanner.close();
     }
 }
